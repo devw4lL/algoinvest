@@ -12,16 +12,7 @@ import functools
 PATH = os.path.join(os.path.dirname(__file__), "data")
 MAX_COST = 500
 
-def timeit(method):
-    @functools.wraps(method)
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-        print(f'Temps écoulé: {te - ts} pour l\'execution de: {method.__name__}')
-        return result
 
-    return timed
 
 @timeit
 def load_csv(file):
