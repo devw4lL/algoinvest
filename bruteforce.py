@@ -1,11 +1,11 @@
-import pprint
+import itertools
 from collections import OrderedDict
 from operator import getitem
+import functools
 import time
-import itertools
+import pprint
 
-# NAME, COST, RETURN in %
-actions = [
+data = [
     ["Action-1", 20, 5],
     ["Action-2", 30, 10],
     ["Action-3", 50, 15],
@@ -30,64 +30,84 @@ actions = [
 MAX_COST = 500
 
 
+class Action:
+    instances = []
+
+    def __init__(self, action):
+        self.name = action[0]
+        self.price = float(action[1])
+        self.profit_per_cent = float(action[2])
+        self.profit = (self.price * self.profit_per_cent) / 100
+        self.instances.append(self)
+
+    def __repr__(self):
+        return f'Nom de l\'action: {self.name} - ' \
+               f'Prix d\'achat: {self.price} - ' \
+               f'Benefice en %: {self.profit_per_cent} - ' \
+               f'Benefice apres deux ans: {self.profit}\n'
+
+
+class Solutions:
+
+    def __init__(self):
+        self.index = 0
+        self.actions = None
+        self.all_results = OrderedDict()
+        self.nbr_results = 1
+
+    def __repr__(self):
+        return f'-------------MEILLEUR SOLUTION---------------\n' \
+               f'{"".join([str(action) for action in self.all_results[1][:-2]])}' \
+               f'PRIX TOTAL: {self.all_results[1][-2]}, PROFIL: {self.all_results[1][-1]}'
+
+    def add_combinations(self, index, action, total_price):
+        self.all_results[index] = action
+        self.all_results[index].append(round(total_price, 2))
+
+    def add_profit(self):
+        for k, value in self.all_results.items():
+            self.all_results[k].append((round(sum([v.profit for v in value if isinstance(v, Action)]), 2)))
+
+    def sort_by_best_profit(self):
+        self.all_results = sorted(self.all_results.values(), key=lambda x: x[-1], reverse=True)
+
+
 def timeit(method):
+    @functools.wraps(method)
     def timed(*args, **kw):
         ts = time.time()
         result = method(*args, **kw)
         te = time.time()
-        print(f'Temps écoulé: {te - ts}')
+        print(f'Temps écoulé: {te - ts} pour l\'execution de: {method.__name__}')
         return result
 
     return timed
 
 
-def add_gain(all_actions):
-    [action.append((action[1] * action[2]) / 100) for action in all_actions]
-
-
-def sort_by_return(all_actions):
-    for i in range(len(all_actions)):
-        for j in range(0, len(all_actions) - i - 1):
-            if all_actions[j][3] < all_actions[j + 1][3]:
-                all_actions[j], all_actions[j + 1] = all_actions[j + 1], all_actions[j]
-
-
-def sort_by_total_return(all_actions):
-    return OrderedDict(sorted(all_actions.items(), key=lambda x: getitem(x[1], 'gain'), reverse=True))
-
-
 @timeit
-def bruteforce(all_actions):
-    all_results = {}
-    all_combinaison = []
-    count = 0
-    for i in range(len(all_actions)):
-        [all_combinaison.append(combis) for combis in
-         itertools.combinations(range(0, len(all_actions)), i)]  # Permutation des indices #Permutation des indices
-    all_combinaison.pop(0)
-    for combi in all_combinaison:
-        count += 1
-        all_results[count] = {'action': [], 'cout': 0, 'gain': 0}
-        for index in combi:
-            if all_results[count]['cout'] < MAX_COST and (all_results[count]['cout'] + all_actions[index][1]) < MAX_COST:
-                all_results[count]['action'].append(all_actions[index][0])
-                all_results[count]['cout'] += all_actions[index][1]
-                all_results[count]['gain'] += round(all_actions[index][3], 2)
-    return all_results
-
-
-def show_results(results):
-    rows = [['--', f'{result["action"]})', f'{result["cout"]}', f'{result["gain"]}'] for result in results.values()]
-    rows.insert(0, ["--", "NOM DES ACTION", "PRIX TOTAL", "GAIN APRES 2 ANS"])
-    max_width = [max(map(len, col)) for col in zip(*rows[:20])]
-    [print("  ".join((val.ljust(width) for val, width in zip(row, max_width)))) for row in rows[:20]]
-    print("\n\r\n\r")
+def knapsack_bruteforce(action_list):
+    combinations = []
+    for i in range(len(action_list)):
+        [combinations.append([action_list[x] for x in action]) for action in
+         [combis for combis in itertools.combinations(range(0, len(action_list)), i) if combis]]
+    # print(len(combinations))
+    for i, actions in enumerate(combinations):
+        total_price = sum([action.price for action in actions])
+        if total_price < MAX_COST:
+            A_solutions.add_combinations(i, actions, total_price)  # ajouter total_price
     return True
 
 
-if __name__ == '__main__':
-    add_gain(actions)
-    sort_by_return(actions)
-    results = bruteforce(actions)
-    pprint.pprint(show_results(sort_by_total_return(results)))
+if __name__ == "__main__":
+    A_solutions = Solutions()
+    knapsack_bruteforce([Action(action) for action in data])
+    A_solutions.add_profit()
+    A_solutions.sort_by_best_profit()
+    print(A_solutions)
 
+"""
+                results[i]['actions'].append(action.name)
+                results[i]['price'] += action.price
+                results[i]['profit'] += action.profit
+        results[i]['profit'] = round(results[i]['profit'], 2)
+"""
