@@ -1,9 +1,7 @@
 import itertools
 from collections import OrderedDict
-from operator import getitem
 import functools
 import time
-import pprint
 
 data = [
     ["Action-1", 20, 5],
@@ -105,9 +103,3 @@ if __name__ == "__main__":
     A_solutions.sort_by_best_profit()
     print(A_solutions)
 
-"""
-                results[i]['actions'].append(action.name)
-                results[i]['price'] += action.price
-                results[i]['profit'] += action.profit
-        results[i]['profit'] = round(results[i]['profit'], 2)
-"""
